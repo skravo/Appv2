@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Site Chemical Register</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1B1F24">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Chem Register">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@500;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1B1F24; --ink-soft: #565B60; --paper: #EDEEEA; --panel: #F8F8F5;
+    --line: #C9CCC5; --accent: #B4780A; --danger: #A3271F; --danger-bg: #F5E4E2;
+    --safe: #1F6F54; --safe-bg: #E3EDE8; --unknown-bg: #EFE7D6; --radius: 3px;
+    --font-display: 'Archivo Narrow', 'Arial Narrow', sans-serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font-body); line-height: 1.45; }
+  .app { max-width: 640px; margin: 0 auto; min-height: 100vh; background: var(--panel); border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
+  header.bar { padding: 22px 20px 16px; border-bottom: 2px solid var(--ink); }
+  header.bar h1 { font-family: var(--font-display); font-weight: 700; font-size: 26px; margin: 0 0 2px; }
+  header.bar p { margin: 0; color: var(--ink-soft); font-size: 13.5px; }
+  nav.tabs { display: flex; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--panel); z-index: 5; }
+  nav.tabs button { flex: 1; padding: 13px 8px; background: none; border: none; font-weight: 600; font-size: 14.5px; color: var(--ink-soft); cursor: pointer; border-bottom: 3px solid transparent; }
+  nav.tabs button.active { color: var(--ink); border-bottom-color: var(--accent); }
+  main { padding: 20px; }
+  .view { display: none; } .view.active { display: block; }
+  .step-row { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .step-num { width: 26px; height: 26px; flex: none; border-radius: 50%; border: 1.5px solid var(--ink); display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 13px; }
+  .step-title { font-family: var(--font-display); font-weight: 700; font-size: 17px; }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; margin-bottom: 16px; }
+  .dropzone { border: 1.5px dashed var(--line); border-radius: var(--radius); padding: 32px 16px; text-align: center; color: var(--ink-soft); font-size: 14px; cursor: pointer; }
+  input[type=file] { display: none; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-weight: 600; font-size: 14.5px; padding: 11px 18px; border-radius: var(--radius); border: 1.5px solid var(--ink); background: var(--ink); color: #fff; cursor: pointer; width: 100%; font-family: var(--font-body); }
+  .btn.secondary { background: transparent; color: var(--ink); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-row { display: flex; gap: 10px; margin-top: 4px; } .btn-row .btn { width: auto; flex: 1; }
+  .preview-img { width: 100%; max-height: 220px; object-fit: cover; border-radius: var(--radius); border: 1px solid var(--line); margin-bottom: 12px; }
+  label { display: block; font-size: 12.5px; font-weight: 600; color: var(--ink-soft); margin: 14px 0 5px; }
+  label:first-child { margin-top: 0; }
+  input[type=text], select, textarea { width: 100%; padding: 10px 11px; border: 1.5px solid var(--line); border-radius: var(--radius); font-family: var(--font-body); font-size: 14.5px; background: #fff; color: var(--ink); }
+  input.mono { font-family: var(--font-mono); }
+  textarea { resize: vertical; min-height: 60px; }
+  select { appearance: none; background: #fff url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="%23565B60"><path d="M5 7l5 6 5-6z"/></svg>') no-repeat right 10px center; background-size: 14px; }
+  .banner { background: var(--unknown-bg); border: 1px solid #D8C68F; border-radius: var(--radius); padding: 12px 14px; font-size: 13.5px; margin-bottom: 16px; }
+  .banner strong { display: block; margin-bottom: 3px; }
+  .loading { display: flex; align-items: center; gap: 10px; color: var(--ink-soft); font-size: 14px; padding: 18px 0; }
+  .spinner { width: 16px; height: 16px; border: 2px solid var(--line); border-top-color: var(--ink); border-radius: 50%; animation: spin 0.7s linear infinite; flex: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error-box { background: var(--danger-bg); border: 1px solid #DBB3AE; color: var(--danger); border-radius: var(--radius); padding: 12px 14px; font-size: 13.5px; margin-bottom: 14px; }
+  .field-row { display: flex; gap: 10px; } .field-row > div { flex: 1; }
+  .register-toolbar { display: flex; gap: 8px; margin-bottom: 14px; }
+  .register-toolbar input { flex: 1; }
+  .register-toolbar .btn { width: auto; white-space: nowrap; }
+  .empty-state { text-align: center; padding: 50px 20px; color: var(--ink-soft); border: 1.5px dashed var(--line); border-radius: var(--radius); }
+  .entry { border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; margin-bottom: 10px; background: #fff; }
+  .entry-name { font-family: var(--font-display); font-weight: 700; font-size: 16.5px; }
+  .entry-brand { color: var(--ink-soft); font-size: 12.5px; margin-top: 1px; }
+  .flags { display: flex; gap: 6px; margin: 9px 0; flex-wrap: wrap; }
+  .flag { font-size: 11.5px; font-weight: 600; padding: 3px 8px; border-radius: 20px; }
+  .flag.yes { background: var(--danger-bg); color: var(--danger); }
+  .flag.no { background: var(--safe-bg); color: var(--safe); }
+  .flag.unknown { background: var(--unknown-bg); color: #7A6014; }
+  .entry-codes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; font-size: 12.5px; margin-bottom: 10px; }
+  .entry-codes div span { display: block; color: var(--ink-soft); font-size: 10.5px; margin-bottom: 2px; }
+  .entry-codes div strong { font-family: var(--font-mono); font-weight: 500; font-size: 13px; }
+  .entry-actions { display: flex; gap: 14px; font-size: 12.5px; }
+  .entry-actions a, .entry-actions button { background: none; border: none; padding: 0; color: var(--ink-soft); text-decoration: underline; cursor: pointer; font-size: 12.5px; font-family: var(--font-body); }
+  .entry-actions a.sds-link { color: var(--accent); font-weight: 600; }
+  footer.note { padding: 16px 20px 32px; font-size: 12px; color: var(--ink-soft); border-top: 1px solid var(--line); }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="bar">
+    <h1>Site Chemical Register</h1>
+    <p>Capture a product, search the web for its SDS, log the hazard details.</p>
+  </header>
+
+  <nav class="tabs">
+    <button id="tabAddBtn" class="active">Add product</button>
+    <button id="tabRegisterBtn">Register (<span id="registerCount">0</span>)</button>
+  </nav>
+
+  <main>
+    <section id="viewAdd" class="view active">
+      <div id="step1">
+        <div class="step-row"><div class="step-num">1</div><div class="step-title">Photo</div></div>
+        <div class="card">
+          <label for="cameraInput" class="dropzone">
+            <div>Tap to take a photo of the product label</div>
+          </label>
+          <input type="file" id="cameraInput" accept="image/*" capture="environment" />
+        </div>
+      </div>
+
+      <div id="step2" style="display:none;">
+        <div class="step-row"><div class="step-num">2</div><div class="step-title">Confirm what this is</div></div>
+        <div class="card">
+          <img id="previewImg" class="preview-img" style="display:none;" alt="Captured product" />
+          <div id="identifyLoading" class="loading" style="display:none;"><div class="spinner"></div>Reading the label…</div>
+          <div id="identifyError" class="error-box" style="display:none;"></div>
+          <label for="fProductName">Product name</label>
+          <input type="text" id="fProductName" />
+          <label for="fBrand">Brand / manufacturer</label>
+          <input type="text" id="fBrand" />
+          <div class="btn-row">
+            <button class="btn secondary" id="retakeBtn">Retake photo</button>
+            <button class="btn" id="findSdsBtn">Search for the SDS</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="step4" style="display:none;">
+        <div class="step-row"><div class="step-num" id="step4Num">3</div><div class="step-title">Verify before saving</div></div>
+        <div id="searchLoading" class="loading" style="display:none;"><div class="spinner"></div>Searching the web for the SDS…</div>
+        <div id="searchError" class="error-box" style="display:none;"></div>
+        <div class="card">
+          <div class="banner"><strong>Check this against the actual SDS.</strong>Automatically extracted, and can be wrong — confirm every field before treating it as your compliance record.</div>
+          <label for="vHazSub">Hazardous substance</label>
+          <select id="vHazSub"><option>Yes</option><option>No</option><option>Unknown</option></select>
+          <label for="vDG">Dangerous good</label>
+          <select id="vDG"><option>Yes</option><option>No</option><option>Unknown</option></select>
+          <div class="field-row">
+            <div><label for="vDGClass">Dangerous goods class</label><input type="text" id="vDGClass" class="mono" placeholder="e.g. 3" /></div>
+            <div><label for="vUN">UN number</label><input type="text" id="vUN" class="mono" placeholder="e.g. UN1993" /></div>
+          </div>
+          <label for="vHazchem">HAZCHEM code</label>
+          <div style="display:flex; gap:8px; align-items:flex-start;">
+            <input type="text" id="vHazchem" class="mono" placeholder="e.g. 3YE" style="flex:1;" />
+            <button type="button" class="btn secondary" id="lookupHazchemBtn" style="width:auto; white-space:nowrap; padding:10px 12px;">Look up</button>
+          </div>
+          <div id="hazchemLookupNote" style="font-size:12px; color:var(--ink-soft); margin-top:4px; display:none;"></div>
+          <label for="vSdsUrl">SDS source link</label>
+          <input type="text" id="vSdsUrl" placeholder="https://…" />
+          <div id="sdsRegionNote" style="font-size:12px; margin-top:6px; display:none;"></div>
+          <label for="vNotes">Notes</label>
+          <textarea id="vNotes" placeholder="Manufacturer, SDS revision date, anything worth flagging"></textarea>
+          <div class="btn-row">
+            <button class="btn secondary" id="backToStep2Btn">Back</button>
+            <button class="btn" id="saveEntryBtn">Save to register</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="viewRegister" class="view">
+      <div class="register-toolbar">
+        <input type="text" id="searchBox" placeholder="Search products…" />
+        <a class="btn secondary" id="exportBtn" href="/api/register/export.csv">Export CSV</a>
+      </div>
+      <div id="registerList"></div>
+    </section>
+  </main>
+
+  <footer class="note">
+    AI-extracted hazard data is a starting point, not a substitute for reading the SDS. Verify classifications with your WHS process before relying on this register in an audit.
+  </footer>
+</div>
+
+<script>
+(function () {
+  const state = { imageBase64: null, imageMediaType: null, editingId: null, register: [], sdsRegion: 'Unknown' };
+
+  const tabAddBtn = document.getElementById('tabAddBtn');
+  const tabRegisterBtn = document.getElementById('tabRegisterBtn');
+  const viewAdd = document.getElementById('viewAdd');
+  const viewRegister = document.getElementById('viewRegister');
+
+  tabAddBtn.addEventListener('click', () => switchTab('add'));
+  tabRegisterBtn.addEventListener('click', () => switchTab('register'));
+
+  function switchTab(name) {
+    const isAdd = name === 'add';
+    tabAddBtn.classList.toggle('active', isAdd);
+    tabRegisterBtn.classList.toggle('active', !isAdd);
+    viewAdd.classList.toggle('active', isAdd);
+    viewRegister.classList.toggle('active', !isAdd);
+    if (!isAdd) loadRegister();
+  }
+
+  function showStep(n) {
+    document.getElementById('step1').style.display = n === 1 ? 'block' : 'none';
+    document.getElementById('step2').style.display = n === 2 ? 'block' : 'none';
+    document.getElementById('step4').style.display = n === 4 ? 'block' : 'none';
+  }
+
+  // ---------- Photo capture ----------
+  const cameraInput = document.getElementById('cameraInput');
+  const previewImg = document.getElementById('previewImg');
+
+  cameraInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const { base64, dataUrl } = await resizeImageToBase64(file, 1024);
+      state.imageBase64 = base64;
+      state.imageMediaType = 'image/jpeg';
+      previewImg.src = dataUrl;
+      previewImg.style.display = 'block';
+      showStep(2);
+      document.getElementById('identifyError').style.display = 'none';
+      identifyProduct();
+    } catch (err) {
+      alert('Could not read that photo. Try again.');
+    }
+    cameraInput.value = '';
+  });
+
+  function resizeImageToBase64(file, maxDim) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('read failed'));
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error('decode failed'));
+        img.onload = () => {
+          let { width, height } = img;
+          if (width > maxDim || height > maxDim) {
+            const scale = maxDim / Math.max(width, height);
+            width = Math.round(width * scale);
+            height = Math.round(height * scale);
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width; canvas.height = height;
+          canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          resolve({ base64: dataUrl.split(',')[1], dataUrl });
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  document.getElementById('retakeBtn').addEventListener('click', () => showStep(1));
+
+  // ---------- Step 2: identify ----------
+  async function identifyProduct() {
+    const loadingEl = document.getElementById('identifyLoading');
+    const errorEl = document.getElementById('identifyError');
+    loadingEl.style.display = 'flex';
+    errorEl.style.display = 'none';
+    try {
+      const res = await fetch('/api/identify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: state.imageBase64, mediaType: state.imageMediaType })
+      });
+      if (!res.ok) throw new Error((await res.json()).error || 'request failed');
+      const json = await res.json();
+      document.getElementById('fProductName').value = json.product_name || '';
+      document.getElementById('fBrand').value = json.brand || '';
+    } catch (err) {
+      errorEl.textContent = "Couldn't identify the product automatically. Type the name and brand in yourself.";
+      errorEl.style.display = 'block';
+    } finally {
+      loadingEl.style.display = 'none';
+    }
+  }
+
+  document.getElementById('findSdsBtn').addEventListener('click', () => {
+    const name = document.getElementById('fProductName').value.trim();
+    if (!name) { alert('Enter a product name first.'); return; }
+    showStep(4);
+    findSds(name, document.getElementById('fBrand').value.trim());
+  });
+
+  document.getElementById('backToStep2Btn').addEventListener('click', () => showStep(2));
+
+  document.getElementById('lookupHazchemBtn').addEventListener('click', async () => {
+    const unNumber = document.getElementById('vUN').value.trim();
+    const noteEl = document.getElementById('hazchemLookupNote');
+    if (!unNumber || ['n/a', 'unknown'].includes(unNumber.toLowerCase())) {
+      noteEl.textContent = 'Enter an actual UN number first -- not applicable to items marked N/A or Unknown.';
+      noteEl.style.display = 'block';
+      return;
+    }
+    const btn = document.getElementById('lookupHazchemBtn');
+    btn.disabled = true;
+    btn.textContent = 'Looking up…';
+    noteEl.style.display = 'none';
+    try {
+      const res = await fetch('/api/hazchem-lookup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ unNumber, dangerousGoodsClass: document.getElementById('vDGClass').value.trim() })
+      });
+      if (!res.ok) throw new Error((await res.json()).error || 'lookup failed');
+      const json = await res.json();
+      if (json.hazchem_code) {
+        document.getElementById('vHazchem').value = json.hazchem_code;
+        noteEl.textContent = json.notes || 'Found from official reference sources -- confirm against your SDS.';
+      } else {
+        noteEl.textContent = "Couldn't find a HAZCHEM code for that UN number. It may not have one, or may need checking manually.";
+      }
+      noteEl.style.display = 'block';
+    } catch (err) {
+      noteEl.textContent = 'The lookup failed. Try again, or enter the code manually.';
+      noteEl.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Look up';
+    }
+  });
+
+  function resetVerifyForm(json) {
+    document.getElementById('vHazSub').value = (json && json.hazardous_substance) || 'Unknown';
+    document.getElementById('vDG').value = (json && json.dangerous_good) || 'Unknown';
+    document.getElementById('vDGClass').value = (json && json.dangerous_goods_class) || '';
+    document.getElementById('vUN').value = (json && json.un_number) || '';
+    document.getElementById('vHazchem').value = (json && json.hazchem_code) || '';
+    document.getElementById('vSdsUrl').value = (json && json.sds_url) || '';
+    document.getElementById('vNotes').value = (json && json.notes) || '';
+    state.sdsRegion = (json && json.sds_region) || 'Unknown';
+    const noteEl = document.getElementById('sdsRegionNote');
+    if (json && json.sds_url) {
+      if (state.sdsRegion === 'Australia') {
+        noteEl.textContent = '✓ Sourced from the Australian manufacturer site.';
+        noteEl.style.color = 'var(--safe)';
+      } else if (state.sdsRegion === 'International') {
+        noteEl.textContent = '⚠ No Australian version found — this is an international SDS. Check for a local one before relying on the details.';
+        noteEl.style.color = 'var(--danger)';
+      } else {
+        noteEl.textContent = 'Source region unclear — confirm this SDS is the Australian version.';
+        noteEl.style.color = 'var(--ink-soft)';
+      }
+      noteEl.style.display = 'block';
+    } else {
+      noteEl.style.display = 'none';
+    }
+  }
+
+  // ---------- Step 3: live search + extract ----------
+  async function findSds(productName, brand) {
+    const loadingEl = document.getElementById('searchLoading');
+    const errorEl = document.getElementById('searchError');
+    loadingEl.style.display = 'flex';
+    errorEl.style.display = 'none';
+    try {
+      const res = await fetch('/api/find-sds', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productName, brand })
+      });
+      if (!res.ok) throw new Error((await res.json()).error || 'request failed');
+      const json = await res.json();
+      resetVerifyForm(json);
+      if (json.sds_found === false) {
+        errorEl.textContent = "Couldn't confidently find an SDS for this product. Review and fill in anything missing by hand.";
+        errorEl.style.display = 'block';
+      }
+    } catch (err) {
+      errorEl.textContent = "The search didn't come back with usable data. Enter the details from the SDS manually below.";
+      errorEl.style.display = 'block';
+      resetVerifyForm();
+    } finally {
+      loadingEl.style.display = 'none';
+    }
+  }
+
+  // ---------- Save ----------
+  document.getElementById('saveEntryBtn').addEventListener('click', async () => {
+    const payload = {
+      product_name: document.getElementById('fProductName').value.trim(),
+      brand: document.getElementById('fBrand').value.trim(),
+      hazardous_substance: document.getElementById('vHazSub').value,
+      dangerous_good: document.getElementById('vDG').value,
+      dangerous_goods_class: document.getElementById('vDGClass').value.trim(),
+      un_number: document.getElementById('vUN').value.trim(),
+      hazchem_code: document.getElementById('vHazchem').value.trim(),
+      sds_url: document.getElementById('vSdsUrl').value.trim(),
+      sds_region: state.sdsRegion || 'Unknown',
+      notes: document.getElementById('vNotes').value.trim()
+    };
+    const saveBtn = document.getElementById('saveEntryBtn');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving…';
+    try {
+      const url = state.editingId ? '/api/register/' + state.editingId : '/api/register';
+      const method = state.editingId ? 'PUT' : 'POST';
+      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      if (!res.ok) throw new Error('save failed');
+      resetAddFlow();
+      switchTab('register');
+    } catch (err) {
+      alert('Could not save that entry. Try again.');
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save to register';
+    }
+  });
+
+  function resetAddFlow() {
+    state.imageBase64 = null; state.imageMediaType = null; state.editingId = null;
+    document.getElementById('fProductName').value = '';
+    document.getElementById('fBrand').value = '';
+    previewImg.style.display = 'none';
+    resetVerifyForm();
+    showStep(1);
+  }
+
+  // ---------- Register view ----------
+  const registerList = document.getElementById('registerList');
+  const searchBox = document.getElementById('searchBox');
+  searchBox.addEventListener('input', renderRegister);
+
+  async function loadRegister() {
+    try {
+      const res = await fetch('/api/register');
+      state.register = await res.json();
+    } catch (err) {
+      state.register = [];
+    }
+    renderRegister();
+  }
+
+  function flagHtml(label, value) {
+    const cls = value === 'Yes' ? 'yes' : value === 'No' ? 'no' : 'unknown';
+    return '<span class="flag ' + cls + '">' + label + ': ' + (value || 'Unknown') + '</span>';
+  }
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function renderRegister() {
+    document.getElementById('registerCount').textContent = state.register.length;
+    const q = searchBox.value.trim().toLowerCase();
+    const items = state.register.filter(e =>
+      !q || (e.product_name || '').toLowerCase().includes(q) || (e.brand || '').toLowerCase().includes(q)
+    ).sort((a, b) => (b.date_added || '').localeCompare(a.date_added || ''));
+
+    if (items.length === 0) {
+      registerList.innerHTML = '<div class="empty-state">' +
+        (state.register.length === 0 ? 'No products in the register yet. Add one from the Add product tab.' : 'No products match your search.') +
+        '</div>';
+      return;
+    }
+
+    registerList.innerHTML = items.map(e => `
+      <div class="entry" data-id="${e.id}">
+        <div class="entry-name">${escapeHtml(e.product_name)}</div>
+        ${e.brand ? '<div class="entry-brand">' + escapeHtml(e.brand) + '</div>' : ''}
+        <div class="flags">
+          ${flagHtml('Hazardous substance', e.hazardous_substance)}
+          ${flagHtml('Dangerous good', e.dangerous_good)}
+          ${e.sds_region === 'Australia' ? '<span class="flag no">SDS: Australia</span>' : e.sds_region === 'International' ? '<span class="flag yes">SDS: International</span>' : ''}
+        </div>
+        <div class="entry-codes">
+          <div><span>DG class</span><strong>${escapeHtml(e.dangerous_goods_class) || '—'}</strong></div>
+          <div><span>UN number</span><strong>${escapeHtml(e.un_number) || '—'}</strong></div>
+          <div><span>HAZCHEM</span><strong>${escapeHtml(e.hazchem_code) || '—'}</strong></div>
+        </div>
+        <div class="entry-actions">
+          ${e.sds_url ? '<a class="sds-link" href="' + escapeHtml(e.sds_url) + '" target="_blank" rel="noopener">Open SDS ↗</a>' : '<span style="color:#8a8f93;">No SDS link saved</span>'}
+          <button class="edit-btn">Edit</button>
+          <button class="delete-btn">Delete</button>
+        </div>
+      </div>
+    `).join('');
+
+    registerList.querySelectorAll('.entry').forEach(el => {
+      const id = el.getAttribute('data-id');
+      el.querySelector('.edit-btn').addEventListener('click', () => editEntry(id));
+      el.querySelector('.delete-btn').addEventListener('click', () => deleteEntry(id));
+    });
+  }
+
+  function editEntry(id) {
+    const e = state.register.find(x => x.id === id);
+    if (!e) return;
+    state.editingId = id;
+    document.getElementById('fProductName').value = e.product_name || '';
+    document.getElementById('fBrand').value = e.brand || '';
+    resetVerifyForm(e);
+    switchTab('add');
+    showStep(4);
+    document.getElementById('step4Num').textContent = '·';
+  }
+
+  async function deleteEntry(id) {
+    if (!confirm('Remove this product from the register?')) return;
+    try {
+      await fetch('/api/register/' + id, { method: 'DELETE' });
+      await loadRegister();
+    } catch (err) {
+      alert('Could not delete that entry.');
+    }
+  }
+
+  loadRegister();
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => { /* offline shell just won't work */ });
+    });
+  }
+})();
+</script>
+</body>
+</html>
